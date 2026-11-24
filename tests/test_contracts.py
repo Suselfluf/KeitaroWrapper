@@ -2,14 +2,26 @@ import pytest
 from pydantic import ValidationError
 
 from app.config import ConfigurationError, load_settings
-from app.contracts import CampaignView, CreateCampaign, CreatedCampaign, DraftChange, PinChange
+from app.contracts import (
+    CampaignView,
+    CreateCampaign,
+    CreatedCampaign,
+    DraftChange,
+    ErrorDetail,
+    ErrorResponse,
+    PinChange,
+)
 
 REVISION = "0a" * 32
 
 
 def test_normalizes_country_and_campaign_name():
     request = CreateCampaign(name=" test_demo_run ", country_code="de", offer_id=24)
-    assert request.model_dump() == dict(name="test_demo_run", country_code="DE", offer_id=24)
+    assert request.model_dump() == {
+        "name": "test_demo_run",
+        "country_code": "DE",
+        "offer_id": 24,
+    }
 
 
 @pytest.mark.parametrize("geo", ["ZZ", "ß", "D3", "DEU"])
@@ -109,3 +121,19 @@ def test_rejects_invalid_settings_without_exposing_values(
         load_settings()
     assert invalid not in str(exc.value)
     assert "confidential" not in str(exc.value)
+
+
+@pytest.mark.parametrize("campaign_id", [None, 24])
+def test_error_omits_unknown_campaign_id(campaign_id):
+    error = ErrorResponse(
+        error=ErrorDetail(
+            code="PARTIAL_CREATE" if campaign_id else "VALIDATION_ERROR",
+            message="Не удалось создать кампанию.",
+            campaign_id=campaign_id,
+        )
+    )
+    payload = error.as_payload()
+    expected = {"code": error.error.code, "message": "Не удалось создать кампанию."}
+    if campaign_id is not None:
+        expected["campaign_id"] = campaign_id
+    assert payload == {"error": expected}

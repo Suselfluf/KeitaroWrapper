@@ -119,3 +119,6 @@ class ErrorDetail(BaseModel):
 
 class ErrorResponse(BaseModel):
     error: ErrorDetail
+
+    def as_payload(self) -> dict[str, object]:
+        return self.model_dump(mode="json", exclude_none=True)
