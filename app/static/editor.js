@@ -4,10 +4,12 @@ const campaignInput = document.getElementById("campaign-id");
 const message = document.getElementById("editor-notice");
 const content = document.getElementById("editor-content");
 const loadButton = document.getElementById("load");
+const RESULT_NOTICE_DURATION_MS = 5000;
 
 let campaign = null;
 let busy = false;
 let confirmation = null;
+let noticeTimer;
 const drafts = new Map();
 const searches = new Map();
 
@@ -49,7 +51,19 @@ function button(label, action, streamId, offerId, className = "button") {
 }
 
 function notice(kind, text) {
-  message.replaceChildren(...(text ? [node("p", text, `message ${kind}`)] : []));
+  window.clearTimeout(noticeTimer);
+  noticeTimer = undefined;
+  if (!text) {
+    message.replaceChildren();
+    return;
+  }
+
+  const entry = node("p", text, `message ${kind}`);
+  message.replaceChildren(entry);
+  if (kind === "ok" || kind === "bad") {
+    noticeTimer = window.setTimeout(() => notice(), RESULT_NOTICE_DURATION_MS);
+  }
+  return entry;
 }
 
 async function request(path, method = "GET", body) {
@@ -209,13 +223,14 @@ function render() {
 async function perform(action, waiting) {
   if (busy) return;
   busy = true;
-  notice(waiting ? "note" : null, waiting);
+  const pending = notice("note", waiting);
   render();
   try {
     await action();
   } catch (error) {
     notice("bad", error.message);
   } finally {
+    if (pending && message.firstElementChild === pending) notice();
     busy = false;
     render();
   }
