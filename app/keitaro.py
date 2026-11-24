@@ -39,6 +39,9 @@ class KeitaroClient:
     def get_offer(self, offer_id: int) -> JsonObject:
         return self._get_object(f"offers/{_id_segment(offer_id)}")
 
+    def list_offers(self) -> list[JsonObject]:
+        return self._get_collection("offers")
+
     def list_domains(self) -> list[JsonObject]:
         return self._get_collection("domains")
 
@@ -50,6 +53,11 @@ class KeitaroClient:
 
     def get_campaign(self, campaign_id: int) -> JsonObject:
         return self._get_object(f"campaigns/{_id_segment(campaign_id)}")
+
+    def list_campaigns(self, *, offset: int, limit: int) -> list[JsonObject]:
+        return self._get_collection(
+            "campaigns", params={"offset": str(offset), "limit": str(limit)}
+        )
 
     def list_campaign_streams(self, campaign_id: int) -> list[JsonObject]:
         return self._get_collection(f"campaigns/{_id_segment(campaign_id)}/streams")

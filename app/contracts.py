@@ -54,9 +54,17 @@ class CreatedCampaign(BaseModel):
     stream_ids: tuple[PositiveId, PositiveId]
 
 
-class OfferResult(BaseModel):
+class SelectionItem(BaseModel):
     id: PositiveId
     name: str
+
+
+class OfferResult(SelectionItem):
+    pass
+
+
+class SelectionResults(BaseModel):
+    items: list[SelectionItem]
 
 
 class ActiveOffer(OfferResult):

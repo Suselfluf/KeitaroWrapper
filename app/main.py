@@ -24,9 +24,11 @@ from app.contracts import (
     OfferResult,
     OffersStreamView,
     PinChange,
+    SelectionResults,
 )
 from app.editor import Editor, EditorError
-from app.keitaro import KeitaroClient
+from app.keitaro import KeitaroClient, KeitaroError
+from app.selection import search_campaigns, search_offers
 from app.storage import create_storage_engine
 
 _APP_DIR = Path(__file__).resolve().parent
@@ -56,6 +58,9 @@ app.mount("/static", StaticFiles(directory=_APP_DIR / "static"), name="static")
 
 def get_keitaro_client(request: Request) -> KeitaroClient:
     return request.app.state.keitaro_client
+
+
+KeitaroDependency = Annotated[KeitaroClient, Depends(get_keitaro_client)]
 
 
 def error_response(
@@ -115,7 +120,7 @@ async def index(request: Request) -> Response:
 def create_campaign_route(
     body: CreateCampaign,
     request: Request,
-    client: Annotated[KeitaroClient, Depends(get_keitaro_client)],
+    client: KeitaroDependency,
 ) -> CreatedCampaign:
     return create_campaign(request.app.state.settings, client, body)
 
@@ -127,9 +132,7 @@ async def campaign_creation_error(
     return error_response(error.status, error.code, str(error), error.campaign_id)
 
 
-def get_editor(
-    request: Request, client: Annotated[KeitaroClient, Depends(get_keitaro_client)]
-) -> Editor:
+def get_editor(request: Request, client: KeitaroDependency) -> Editor:
     return Editor(
         client,
         request.app.state.engine,
@@ -141,6 +144,18 @@ EditorDependency = Annotated[Editor, Depends(get_editor)]
 PathId = Annotated[int, PathParameter(gt=0)]
 _EDITOR_ERRORS = {status: {"model": ErrorResponse} for status in (403, 404, 409, 422, 502, 503)}
 _STREAM_PATH = "/api/campaigns/{campaign_id}/streams/{stream_id}"
+
+
+@app.get("/api/offers", responses={502: {"model": ErrorResponse}})
+def offer_selection_route(client: KeitaroDependency, q: str = "") -> SelectionResults:
+    return search_offers(client, q)
+
+
+@app.get("/api/campaigns", responses={502: {"model": ErrorResponse}})
+def campaign_selection_route(
+    request: Request, client: KeitaroDependency, q: str = ""
+) -> SelectionResults:
+    return search_campaigns(client, request.app.state.settings.keitaro_test_prefix, q)
 
 
 @app.get("/api/offers/{offer_id}", responses=_EDITOR_ERRORS)
@@ -181,6 +196,11 @@ def pin_route(
 @app.exception_handler(EditorError)
 async def editor_error(_request: Request, error: EditorError) -> JSONResponse:
     return error_response(error.status, error.code, str(error))
+
+
+@app.exception_handler(KeitaroError)
+async def keitaro_error(_request: Request, _error: KeitaroError) -> JSONResponse:
+    return error_response(502, "KEITARO_ERROR", "Поиск в Keitaro недоступен.")
 
 
 @app.exception_handler(SQLAlchemyError)
