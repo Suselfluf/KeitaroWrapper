@@ -91,10 +91,10 @@ function idFrom(value) {
 }
 
 function shareText(share) {
-  return `${share}%`;
+  return share === null ? "—" : `${share}%`;
 }
 
-function drawOffer(offer, streamId, archived, confirmedIds) {
+function drawOffer(offer, streamId, archived, confirmedOffers) {
   const row = node("div", undefined, `offer-row ${archived ? "archive-row" : "active-row"}`);
   row.dataset.offer = offer.id;
   const identity = node("div");
@@ -110,10 +110,10 @@ function drawOffer(offer, streamId, archived, confirmedIds) {
     const pin = button(pinText, "pin", streamId, offer.id);
     pin.setAttribute("aria-label", `${pinText} ${name} (ID ${offer.id})`);
     pin.setAttribute("aria-pressed", String(offer.pinned));
-    pin.disabled = busy || !confirmedIds.has(offer.id);
+    pin.disabled = busy || !confirmedOffers.has(offer.id);
     const remove = button("Убрать", "remove", streamId, offer.id, "button danger");
     remove.setAttribute("aria-label", `Убрать ${name} (ID ${offer.id})`);
-    if (confirmedIds.has(offer.id)) controls.append(pin);
+    if (confirmedOffers.has(offer.id)) controls.append(pin);
     controls.append(remove);
   }
   row.append(identity, node("span", shareText(offer.share), "weight"), controls);
@@ -154,6 +154,7 @@ function drawSearch(streamId) {
 function drawStream(confirmed) {
   const draft = drafts.get(confirmed.id);
   const stream = draft ?? confirmed;
+  const needsPreview = draft?.needsPreview === true;
   const card = node("section", undefined, `stream-card${draft ? " stream-draft" : ""}`);
   card.dataset.stream = stream.id;
   const heading = node("div", undefined, "stream-heading");
@@ -161,22 +162,30 @@ function drawStream(confirmed) {
   card.append(heading);
   if (stream.kind === "redirect") return card;
 
-  const total = stream.active.reduce((sum, offer) => sum + offer.share, 0);
-  const totalText = new Intl.NumberFormat("ru", {maximumFractionDigits: 10}).format(total);
-  heading.append(node("small", `Общий вес ${totalText}%`, "share-total"));
-  const confirmedIds = new Set(confirmed.active.map(({id}) => id));
+  if (!needsPreview) {
+    const total = stream.active.reduce((sum, offer) => sum + offer.share, 0);
+    const totalText = new Intl.NumberFormat("ru", {maximumFractionDigits: 10}).format(total);
+    heading.append(node("small", `Общий вес ${totalText}%`, "share-total"));
+  }
+  const confirmedOffers = new Map(confirmed.active.map((offer) => [offer.id, offer]));
   if (stream.active.length) {
     const columnLabels = node("div", undefined, "offer-row offer-labels");
     for (const label of ["Оффер", "Вес", "Действия"]) columnLabels.append(node("span", label));
     card.append(columnLabels);
-    for (const offer of stream.active) card.append(drawOffer(offer, stream.id, false, confirmedIds));
+    for (const offer of stream.active) {
+      const current = confirmedOffers.get(offer.id);
+      const display = needsPreview
+        ? {...offer, share: current?.share ?? null, pinned: current?.pinned ?? false}
+        : offer;
+      card.append(drawOffer(display, stream.id, false, confirmedOffers));
+    }
   } else {
     card.append(node("p", "В потоке нет активных офферов.", "editor-empty"));
   }
   if (stream.archived.length) {
     const archive = node("section", undefined, "offer-archive");
     archive.append(node("h3", "Архив"));
-    for (const offer of stream.archived) archive.append(drawOffer(offer, stream.id, true, confirmedIds));
+    for (const offer of stream.archived) archive.append(drawOffer(offer, stream.id, true, confirmedOffers));
     card.append(archive);
   }
   card.append(drawSearch(stream.id));
@@ -185,14 +194,15 @@ function drawStream(confirmed) {
     const bar = node("div", undefined, "draft-bar");
     const text = node("div");
     text.append(
-      node("strong", "Черновик"),
-      node("p", "Keitaro сохраняет последний подтверждённый состав до отправки."),
+      node("strong", needsPreview ? "Черновик требует перерасчёта" : "Черновик"),
+      node("p", needsPreview
+        ? "Для отправки измените состав или закрепление."
+        : "Keitaro сохраняет последний подтверждённый состав до отправки."),
     );
     const controls = node("div", undefined, "offer-actions");
-    controls.append(
-      button("Отменить черновик", "cancel", stream.id),
-      button("Отправить в Keitaro", "push", stream.id, undefined, "button primary"),
-    );
+    const publish = button("Отправить в Keitaro", "push", stream.id, undefined, "button primary");
+    publish.disabled = busy || needsPreview;
+    controls.append(button("Отменить черновик", "cancel", stream.id), publish);
     bar.append(text, controls);
     card.append(bar);
   }
@@ -332,6 +342,7 @@ content.addEventListener("click", (event) => {
     return;
   }
   if (action === "push") {
+    if (!draft || draft.needsPreview) return;
     return perform(async () => {
       const updated = await request(streamPath(streamId) + "/offers", "PUT", {
         revision: draft.revision,
@@ -351,7 +362,10 @@ content.addEventListener("click", (event) => {
         pinned: !current.pinned,
       });
       updateConfirmed(updated);
-      if (draft) drafts.set(streamId, await preview(streamId, updated.revision, active));
+      if (draft) {
+        drafts.set(streamId, {...draft, needsPreview: true});
+        drafts.set(streamId, await preview(streamId, updated.revision, active));
+      }
     }, "Сохраняем закрепление…").then(() => {
       content.querySelector(`[data-stream="${streamId}"] [data-action="pin"][data-id="${offerId}"]`)?.focus();
     });
