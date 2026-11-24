@@ -1,3 +1,5 @@
+import { openCampaign } from "./editor.js";
+
 const form = document.getElementById("create-form");
 const createButton = document.getElementById("create");
 const notice = document.getElementById("create-notice");
@@ -20,7 +22,7 @@ function updateRoute() {
 country.addEventListener("input", updateRoute);
 offer.addEventListener("input", updateRoute);
 
-function showNotice(kind, title, description) {
+function showNotice(kind, title, description, campaignId) {
   const panel = document.createElement("div");
   panel.classList.add("message", kind);
   const heading = document.createElement("p");
@@ -31,6 +33,14 @@ function showNotice(kind, title, description) {
     const detail = document.createElement("p");
     detail.textContent = description;
     panel.append(detail);
+  }
+  if (campaignId !== undefined) {
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "button";
+    open.textContent = "Открыть в редакторе";
+    open.addEventListener("click", () => openCampaign(campaignId));
+    panel.append(open);
   }
   notice.replaceChildren(panel);
 }
@@ -74,6 +84,7 @@ form.addEventListener("submit", async (event) => {
       "ok",
       `Кампания № ${result.campaign_id} создана и включена.`,
       `Поток на Google № ${redirectId}. Поток на оффер № ${fallbackId}.`,
+      result.campaign_id,
     );
   } catch {
     showNotice("bad", "Ответ не получен. Проверьте кампанию в Keitaro перед повтором.");

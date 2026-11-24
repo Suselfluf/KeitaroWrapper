@@ -140,3 +140,53 @@ input::placeholder { color: var(--muted); }
   .card { padding: 15px; }
   .tab { padding-inline: 9px; }
 }
+
+.editor-form, .offer-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin-block: 16px;
+}
+.editor-form .field, .offer-search .field { width: min(270px, 100%); }
+.editor-campaign { padding-block: 4px; overflow-wrap: anywhere; }
+.stream-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-block: 9px; }
+.stream-draft { border-color: var(--care); }
+.stream-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.stream-heading h3, .stream-heading strong { margin-right: auto; overflow-wrap: anywhere; }
+.editor-empty { padding-block: 10px; color: var(--muted); }
+.offer-labels { color: var(--muted); font-size: .85rem; }
+.offer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(55px, auto) minmax(235px, auto);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.offer-row strong { overflow-wrap: anywhere; }
+.offer-row small { display: block; }
+.offer-row .button { padding: 4px 9px; min-height: 32px; font-size: .84rem; }
+.offer-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.offer-labels span:last-child { text-align: right; }
+.weight { font-weight: 690; }
+.offer-archive { margin-top: 12px; }
+.archive-row { background: var(--inset); }
+.danger { color: var(--bad); }
+.lookup-result, .draft-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 8px;
+}
+.lookup-result { background: var(--inset); }
+.draft-bar { margin-top: 12px; color: var(--care); background: var(--care-bg); }
+.message .button { margin-top: 8px; }
+@media (max-width: 600px) {
+  .offer-row { grid-template-columns: minmax(0, 1fr) minmax(48px, auto); }
+  .offer-row .offer-actions { grid-column: 1/-1; justify-content: flex-start; }
+  .offer-labels span:last-child { display: none; }
+}

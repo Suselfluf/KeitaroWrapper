@@ -25,7 +25,7 @@
   <div class="intro"><h1>Кампании Keitaro</h1></div>
   <nav class="toolbar" role="tablist" aria-label="Кампании">
     <button id="tab-create" class="tab" role="tab" aria-controls="create-screen" aria-selected="true" type="button">Создать кампанию</button>
-    <button id="tab-editor" class="tab" role="tab" aria-controls="editor-screen" aria-selected="false" disabled type="button">Редактор офферов</button>
+    <button id="tab-editor" class="tab" role="tab" aria-controls="editor-screen" aria-selected="false" tabindex="-1" type="button">Редактор офферов</button>
   </nav>
   <section id="create-screen" role="tabpanel" aria-labelledby="tab-create">
     <div class="split">
@@ -65,7 +65,21 @@
       </section>
     </div>
   </section>
-  <section id="editor-screen" role="tabpanel" aria-labelledby="tab-editor" hidden></section>
+  <section id="editor-screen" role="tabpanel" aria-labelledby="tab-editor" hidden>
+    <section class="card" aria-labelledby="editor-heading">
+      <h2 id="editor-heading">Существующая кампания</h2>
+      <form id="editor-form" class="editor-form">
+        <label class="field">ID кампании
+          <input id="campaign-id" name="campaign_id" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
+        </label>
+        <button id="load" class="button primary" type="submit">Загрузить потоки</button>
+      </form>
+      <div id="editor-notice" role="status" aria-live="polite"></div>
+      <div id="editor-content">
+        <p class="editor-empty">Загрузите кампанию по её ID, чтобы увидеть потоки.</p>
+      </div>
+    </section>
+  </section>
 </main>
 </body>
 </html>

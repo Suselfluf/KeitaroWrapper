@@ -4,14 +4,28 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
+from fastapi import Path as PathParameter
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.campaigns import CampaignCreationError, create_campaign
 from app.config import load_settings
-from app.contracts import CreateCampaign, CreatedCampaign, ErrorCode, ErrorDetail, ErrorResponse
+from app.contracts import (
+    CampaignView,
+    CreateCampaign,
+    CreatedCampaign,
+    DraftChange,
+    ErrorCode,
+    ErrorDetail,
+    ErrorResponse,
+    OfferResult,
+    OffersStreamView,
+    PinChange,
+)
+from app.editor import Editor, EditorError
 from app.keitaro import KeitaroClient
 from app.storage import create_storage_engine
 
@@ -111,3 +125,64 @@ async def campaign_creation_error(
     _request: Request, error: CampaignCreationError
 ) -> JSONResponse:
     return error_response(error.status, error.code, str(error), error.campaign_id)
+
+
+def get_editor(
+    request: Request, client: Annotated[KeitaroClient, Depends(get_keitaro_client)]
+) -> Editor:
+    return Editor(
+        client,
+        request.app.state.engine,
+        request.app.state.settings.keitaro_test_prefix,
+    )
+
+
+EditorDependency = Annotated[Editor, Depends(get_editor)]
+PathId = Annotated[int, PathParameter(gt=0)]
+_EDITOR_ERRORS = {status: {"model": ErrorResponse} for status in (403, 404, 409, 422, 502, 503)}
+_STREAM_PATH = "/api/campaigns/{campaign_id}/streams/{stream_id}"
+
+
+@app.get("/api/offers/{offer_id}", responses=_EDITOR_ERRORS)
+def find_offer_route(offer_id: PathId, editor: EditorDependency) -> OfferResult:
+    return editor.find_offer(offer_id)
+
+
+@app.post("/api/campaigns/{campaign_id}/sync", responses=_EDITOR_ERRORS)
+def sync_campaign_route(campaign_id: PathId, editor: EditorDependency) -> CampaignView:
+    return editor.sync(campaign_id)
+
+
+@app.post(_STREAM_PATH + "/draft", responses=_EDITOR_ERRORS)
+def draft_route(
+    campaign_id: PathId, stream_id: PathId, body: DraftChange, editor: EditorDependency
+) -> OffersStreamView:
+    return editor.change_offers(campaign_id, stream_id, body, publish=False)
+
+
+@app.put(_STREAM_PATH + "/offers", responses=_EDITOR_ERRORS)
+def publish_route(
+    campaign_id: PathId, stream_id: PathId, body: DraftChange, editor: EditorDependency
+) -> OffersStreamView:
+    return editor.change_offers(campaign_id, stream_id, body, publish=True)
+
+
+@app.put(_STREAM_PATH + "/offers/{offer_id}/pin", responses=_EDITOR_ERRORS)
+def pin_route(
+    campaign_id: PathId,
+    stream_id: PathId,
+    offer_id: PathId,
+    body: PinChange,
+    editor: EditorDependency,
+) -> OffersStreamView:
+    return editor.pin(campaign_id, stream_id, offer_id, body)
+
+
+@app.exception_handler(EditorError)
+async def editor_error(_request: Request, error: EditorError) -> JSONResponse:
+    return error_response(error.status, error.code, str(error))
+
+
+@app.exception_handler(SQLAlchemyError)
+async def storage_error(_request: Request, _error: SQLAlchemyError) -> JSONResponse:
+    return error_response(503, "STORAGE_ERROR", "Локальная история временно недоступна.")
