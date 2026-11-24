@@ -52,3 +52,5 @@ uv run --locked ruff check
 ```
 
 Требования, инженерные решения, изменения в Git и доказательства проверок собраны в [журнале разработки](docs/development-log.md). Маршруты обёртки доступны в её [схеме OpenAPI](http://127.0.0.1:8765/docs) после запуска. Справочные маршруты и операции учебного Keitaro описаны в его [схеме OpenAPI](https://keitaro-for-tests.etolegko.com/openapi.json).
+
+Текущее поведение описано в спецификациях [кампаний](docs/specs/campaign/spec.md), [редактора](docs/specs/editor/spec.md) и [материалов сдачи](docs/specs/delivery/spec.md). [Архитектурные решения](docs/decisions).
