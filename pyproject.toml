@@ -1,0 +1,30 @@
+[project]
+name = "keitaro-wrapper"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic",
+    "fastapi",
+    "httpx",
+    "jinja2",
+    "pycountry",
+    "pydantic>=2",
+    "sqlalchemy>=2",
+    "uvicorn",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 96
+
+[tool.ruff.lint]
+extend-select = ["I"]
