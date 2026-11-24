@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Keitaro Wrapper</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  <script src="{{ url_for('static', path='app.js') }}" type="module"></script>
+</head>
+<body>
+<header class="top">
+  <div class="bound top-inner">
+    <div class="brand"><span class="logo" aria-hidden="true">KT</span>Keitaro Wrapper</div>
+    <label>Тема
+      <select id="theme">
+        <option value="auto">Как в системе</option>
+        <option value="light">Светлая</option>
+        <option value="dark">Тёмная</option>
+      </select>
+    </label>
+  </div>
+</header>
+<main class="bound">
+  <div class="intro"><h1>Кампании Keitaro</h1></div>
+  <nav class="toolbar" role="tablist" aria-label="Кампании">
+    <button id="tab-create" class="tab" role="tab" aria-controls="create-screen" aria-selected="true" type="button">Создать кампанию</button>
+    <button id="tab-editor" class="tab" role="tab" aria-controls="editor-screen" aria-selected="false" disabled type="button">Редактор офферов</button>
+  </nav>
+  <section id="create-screen" role="tabpanel" aria-labelledby="tab-create">
+    <div class="split">
+      <section class="card" id="create-form-card" aria-labelledby="create-heading">
+        <h2 id="create-heading">Новая кампания</h2>
+        <form id="create-form">
+          <div class="form-fields">
+            <label class="field full">Название кампании
+              <input id="campaign-name" name="name" spellcheck="false" required aria-describedby="prefix-hint">
+              <small id="prefix-hint">Префикс названия: <code>{{ test_prefix }}</code></small>
+            </label>
+            <label class="field">Код страны
+              <input id="country" name="country_code" type="text" maxlength="2" pattern="[A-Za-z]{2}" placeholder="IT" autocomplete="off" spellcheck="false" autocapitalize="characters" required>
+            </label>
+            <label class="field">ID оффера
+              <input id="create-offer" name="offer_id" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
+            </label>
+          </div>
+          <button id="create" type="submit" class="button primary">Создать кампанию</button>
+          <div id="create-notice" aria-live="polite" aria-atomic="true" role="status"></div>
+        </form>
+      </section>
+      <section class="card" id="routing" aria-labelledby="routing-heading">
+        <h2 id="routing-heading">Маршрут трафика</h2>
+        <ol class="flow-list">
+          <li><strong>Посетители из выбранной страны</strong><span id="country-route">Google</span></li>
+          <li><strong>Остальные посетители</strong><span id="offer-route">Выбранный оффер</span></li>
+        </ol>
+        <div class="config">
+          <h3>Из настроек приложения</h3>
+          <dl>
+            <dt>Домен</dt><dd>ID {{ domain_id }}</dd>
+            <dt>Группа</dt><dd>ID {{ group_id }}</dd>
+            <dt>Источник</dt><dd>ID {{ traffic_source_id }}</dd>
+          </dl>
+        </div>
+      </section>
+    </div>
+  </section>
+  <section id="editor-screen" role="tabpanel" aria-labelledby="tab-editor" hidden></section>
+</main>
+</body>
+</html>
