@@ -40,9 +40,15 @@
             <label class="field">Код страны
               <input id="country" name="country_code" type="text" maxlength="2" pattern="[A-Za-z]{2}" placeholder="IT" autocomplete="off" spellcheck="false" autocapitalize="characters" required>
             </label>
-            <label class="field">ID оффера
-              <input id="create-offer" name="offer_id" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
-            </label>
+            <div class="selection" data-selection="/api/offers">
+              <label class="field">ID оффера
+                <input id="create-offer" name="offer_id" type="text" placeholder="ID или название" pattern="[0-9]+" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="create-offer-options" required>
+              </label>
+              <div class="selection-panel" hidden>
+                <div class="selection-status" role="status" hidden></div>
+                <ul id="create-offer-options" class="selection-options" role="listbox" aria-label="Подходящие офферы" hidden></ul>
+              </div>
+            </div>
           </div>
           <button id="create" type="submit" class="button primary">Создать кампанию</button>
           <div id="create-notice" aria-live="polite" aria-atomic="true" role="status"></div>
@@ -69,9 +75,15 @@
     <section class="card" aria-labelledby="editor-heading">
       <h2 id="editor-heading">Существующая кампания</h2>
       <form id="editor-form" class="editor-form">
-        <label class="field">ID кампании
-          <input id="campaign-id" name="campaign_id" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
-        </label>
+        <div class="selection" data-selection="/api/campaigns">
+          <label class="field">ID кампании
+            <input id="campaign-id" name="campaign_id" type="text" placeholder="ID или название" pattern="[0-9]+" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="campaign-id-options" required>
+          </label>
+          <div class="selection-panel" hidden>
+            <div class="selection-status" role="status" hidden></div>
+            <ul id="campaign-id-options" class="selection-options" role="listbox" aria-label="Подходящие кампании" hidden></ul>
+          </div>
+        </div>
         <button id="load" class="button primary" type="submit">Загрузить потоки</button>
       </form>
       <div id="editor-notice" role="status" aria-live="polite"></div>

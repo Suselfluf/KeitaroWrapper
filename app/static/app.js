@@ -1,4 +1,5 @@
 import { openCampaign } from "./editor.js";
+import { mountSelection } from "./selection.js";
 
 const form = document.getElementById("create-form");
 const createButton = document.getElementById("create");
@@ -14,13 +15,15 @@ theme.addEventListener("change", () => {
 function updateRoute() {
   const code = country.value.trim().toUpperCase();
   document.getElementById("country-route").textContent = code ? `${code} → Google` : "Google";
-  document.getElementById("offer-route").textContent = offer.value
+  document.getElementById("offer-route").textContent = /^[0-9]+$/.test(offer.value)
     ? `Оффер № ${offer.value}`
     : "Выбранный оффер";
 }
 
 country.addEventListener("input", updateRoute);
 offer.addEventListener("input", updateRoute);
+offer.addEventListener("change", updateRoute);
+document.querySelectorAll("[data-selection]").forEach(mountSelection);
 
 function showNotice(kind, title, description, campaignId) {
   const panel = document.createElement("div");

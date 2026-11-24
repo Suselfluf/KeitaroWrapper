@@ -105,6 +105,38 @@ main { padding-block: 30px 38px; }
 .card { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); padding: 22px; min-width: 0; }
 .form-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-block: 17px; }
 .form-fields .full { grid-column: 1/-1; }
+.selection { position: relative; min-width: 0; }
+.selection-panel {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  border: 1px solid var(--strong-line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.form-fields .selection-panel { inset-inline-start: auto; width: max(100%, min(234px, 70vw)); }
+.selection-status { padding: 7px 9px; color: var(--muted); font-size: .85rem; }
+.selection-status[data-error="true"] { color: var(--bad); }
+.selection-options { margin: 0; padding: 2px; list-style: none; max-height: 210px; overflow: auto; }
+.selection-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: .88rem;
+  overflow-wrap: anywhere;
+}
+.selection-option small { font-family: var(--mono); }
+.selection-option[aria-selected="true"], .selection-option:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
 label.field { display: grid; gap: 5px; font-size: .88rem; font-weight: 630; min-width: 0; }
 input, select { min-width: 0; max-width: 100%; border: 1px solid var(--strong-line); border-radius: 8px; background: var(--surface); color: var(--text); padding: 8px 10px; }
 input { width: 100%; min-height: 43px; }
@@ -148,7 +180,7 @@ input::placeholder { color: var(--muted); }
   gap: 10px;
   margin-block: 16px;
 }
-.editor-form .field, .offer-search .field { width: min(270px, 100%); }
+.editor-form .selection, .offer-search .field { width: min(270px, 100%); }
 .editor-campaign { padding-block: 4px; overflow-wrap: anywhere; }
 .stream-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-block: 9px; }
 .stream-draft { border-color: var(--care); }
