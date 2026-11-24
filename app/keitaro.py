@@ -57,11 +57,32 @@ class KeitaroClient:
     def get_stream(self, stream_id: int) -> JsonObject:
         return self._get_object(f"streams/{_id_segment(stream_id)}")
 
-    def _get_json(self, path: str, *, params: dict[str, str] | None = None) -> object:
+    def create_campaign(self, payload: JsonObject) -> JsonObject:
+        return _json_object(self._request("POST", "campaigns", payload=payload))
+
+    def create_stream(self, payload: JsonObject) -> JsonObject:
+        return _json_object(self._request("POST", "streams", payload=payload))
+
+    def set_stream_offers(self, stream_id: int, offers: list[JsonObject]) -> None:
+        self._request("PUT", f"streams/{_id_segment(stream_id)}", payload={"offers": offers})
+
+    def enable_campaign(self, campaign_id: int) -> None:
+        self._request("POST", f"campaigns/{_id_segment(campaign_id)}/enable")
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, str] | None = None,
+        payload: JsonObject | None = None,
+    ) -> httpx.Response:
         try:
-            response = self._http.get(
+            response = self._http.request(
+                method,
                 path,
                 params=params,
+                json=payload,
                 headers={
                     "Accept": "application/json",
                     "Api-Key": self._api_key.get_secret_value(),
@@ -71,24 +92,32 @@ class KeitaroClient:
             raise KeitaroError("transport") from None
         if not response.is_success:
             raise KeitaroError("http", status_code=response.status_code)
-        try:
-            return response.json()
-        except ValueError:
-            raise KeitaroError("invalid_response") from None
+        return response
 
     def _get_object(self, path: str) -> JsonObject:
-        data = self._get_json(path)
-        if not isinstance(data, dict):
-            raise KeitaroError("invalid_response")
-        return data
+        return _json_object(self._request("GET", path))
 
     def _get_collection(
         self, path: str, *, params: dict[str, str] | None = None
     ) -> list[JsonObject]:
-        data = self._get_json(path, params=params)
+        data = _decode_json(self._request("GET", path, params=params))
         if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
             raise KeitaroError("invalid_response")
         return data
+
+
+def _decode_json(response: httpx.Response) -> object:
+    try:
+        return response.json()
+    except ValueError:
+        raise KeitaroError("invalid_response") from None
+
+
+def _json_object(response: httpx.Response) -> JsonObject:
+    data = _decode_json(response)
+    if not isinstance(data, dict):
+        raise KeitaroError("invalid_response")
+    return data
 
 
 def _id_segment(entity_id: int) -> int:
