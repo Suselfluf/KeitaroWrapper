@@ -2,6 +2,8 @@
 
 Локальное веб-приложение для тестового задания Adrobot. Оно создаёт кампании с двумя потоками и редактирует состав и веса офферов существующей кампании.
 
+[Исходное ТЗ и вложения](docs/assignment/README.md) · [TRACE.md — журнал реализации и проверок](TRACE.md) · [Архитектура](docs/ARCHITECTURE.md)
+
 ## Быстрый запуск
 
 Понадобятся [uv](https://docs.astral.sh/uv/getting-started/installation/), Python 3.12 и доступ к [учебному Keitaro](https://keitaro-for-tests.etolegko.com/admin/). В чистой копии репозитория выполните из корня проекта:
@@ -51,6 +53,6 @@ uv run --locked pytest -q
 uv run --locked ruff check
 ```
 
-Требования, инженерные решения, изменения в Git и доказательства проверок собраны в [журнале разработки](docs/development-log.md). Маршруты обёртки доступны в её [схеме OpenAPI](http://127.0.0.1:8765/docs) после запуска. Справочные маршруты и операции учебного Keitaro описаны в его [схеме OpenAPI](https://keitaro-for-tests.etolegko.com/openapi.json).
+Для каждого блока требований в [TRACE.md](TRACE.md#от-требования-до-проверки) указаны коммиты и способы проверки. Маршруты обёртки доступны в её [схеме OpenAPI](http://127.0.0.1:8765/docs) после запуска. Справочные маршруты и операции учебного Keitaro описаны в его [схеме OpenAPI](https://keitaro-for-tests.etolegko.com/openapi.json).
 
 Текущее поведение описано в спецификациях [кампаний](docs/specs/campaign/spec.md), [редактора](docs/specs/editor/spec.md) и [материалов сдачи](docs/specs/delivery/spec.md). [Архитектурные решения](docs/decisions).
