@@ -2,6 +2,8 @@ const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
 const form = document.getElementById("editor-form");
 const campaignInput = document.getElementById("campaign-id");
 const message = document.getElementById("editor-notice");
+const noticeFallback = document.getElementById("editor-notice-fallback");
+const announcement = document.getElementById("editor-announcement");
 const content = document.getElementById("editor-content");
 const loadButton = document.getElementById("load");
 const RESULT_NOTICE_DURATION_MS = 5000;
@@ -10,6 +12,7 @@ let campaign = null;
 let busy = false;
 let confirmation = null;
 let noticeTimer;
+let noticeStreamId = null;
 const drafts = new Map();
 const searches = new Map();
 
@@ -50,19 +53,33 @@ function button(label, action, streamId, offerId, className = "button") {
   return element;
 }
 
-function notice(kind, text) {
+function placeNotice() {
+  const slotSelector = noticeStreamId === null
+    ? "[data-notice-stream]"
+    : `[data-notice-stream="${noticeStreamId}"]`;
+  const streamSlot = content.querySelector(slotSelector);
+  const slot = streamSlot ?? noticeFallback;
+  if (message.parentElement !== slot) slot.append(message);
+  noticeFallback.hidden = Boolean(streamSlot);
+}
+
+function notice(kind, text, streamId = null) {
   window.clearTimeout(noticeTimer);
   noticeTimer = undefined;
+  announcement.textContent = text ?? "";
   if (!text) {
     message.replaceChildren();
     return;
   }
 
+  noticeStreamId = streamId;
+  placeNotice();
   const entry = node("p", text, `message ${kind}`);
-  message.replaceChildren(entry);
   if (kind === "ok" || kind === "bad") {
+    entry.tabIndex = 0;
     noticeTimer = window.setTimeout(() => notice(), RESULT_NOTICE_DURATION_MS);
   }
+  message.replaceChildren(entry);
   return entry;
 }
 
@@ -188,7 +205,9 @@ function drawStream(confirmed) {
     for (const offer of stream.archived) archive.append(drawOffer(offer, stream.id, true, confirmedOffers));
     card.append(archive);
   }
-  card.append(drawSearch(stream.id));
+  const noticeSlot = node("div", undefined, "editor-notice-slot");
+  noticeSlot.dataset.noticeStream = stream.id;
+  card.append(noticeSlot, drawSearch(stream.id));
 
   if (draft) {
     const bar = node("div", undefined, "draft-bar");
@@ -228,17 +247,18 @@ function render() {
   }
   blocks.push(...campaign.streams.map(drawStream));
   content.replaceChildren(...blocks);
+  placeNotice();
 }
 
-async function perform(action, waiting) {
+async function perform(action, waiting, streamId = null) {
   if (busy) return;
   busy = true;
-  const pending = notice("note", waiting);
+  const pending = notice("note", waiting, streamId);
   render();
   try {
     await action();
   } catch (error) {
-    notice("bad", error.message);
+    notice("bad", error.message, streamId);
   } finally {
     if (pending && message.firstElementChild === pending) notice();
     busy = false;
@@ -306,12 +326,12 @@ content.addEventListener("submit", (event) => {
   const streamId = Number(event.target.dataset.stream);
   const value = event.target.elements.offer_id.value;
   const id = idFrom(value);
-  if (id === null) return notice("bad", "Укажите положительный ID оффера.");
+  if (id === null) return notice("bad", "Укажите положительный ID оффера.", streamId);
   searches.set(streamId, {query: value});
   perform(async () => {
     const result = await request(`/api/offers/${id}`);
     searches.set(streamId, {query: value, result});
-  }, "Ищем оффер…").then(() => {
+  }, "Ищем оффер…", streamId).then(() => {
     if (searches.get(streamId)?.result) {
       content.querySelector(`[data-stream="${streamId}"] [data-action="add"]`)?.focus();
     }
@@ -351,8 +371,8 @@ content.addEventListener("click", (event) => {
       updateConfirmed(updated);
       drafts.delete(streamId);
       searches.delete(streamId);
-      notice("ok", "Изменения отправлены. Состав и веса подтверждены чтением из Keitaro.");
-    }, "Отправляем изменения в Keitaro…");
+      notice("ok", "Изменения отправлены. Состав и веса подтверждены чтением из Keitaro.", streamId);
+    }, "Отправляем изменения в Keitaro…", streamId);
   }
   if (action === "pin") {
     const current = confirmed.active.find(({id}) => id === offerId);
@@ -366,19 +386,19 @@ content.addEventListener("click", (event) => {
         drafts.set(streamId, {...draft, needsPreview: true});
         drafts.set(streamId, await preview(streamId, updated.revision, active));
       }
-    }, "Сохраняем закрепление…").then(() => {
+    }, "Сохраняем закрепление…", streamId).then(() => {
       content.querySelector(`[data-stream="${streamId}"] [data-action="pin"][data-id="${offerId}"]`)?.focus();
     });
   }
   if (action === "remove" && active.length === 1) {
-    return notice("bad", "В потоке должен остаться хотя бы один активный оффер.");
+    return notice("bad", "В потоке должен остаться хотя бы один активный оффер.", streamId);
   }
   if (action === "add" && active.includes(offerId)) {
-    return notice("bad", "Этот оффер уже активен в потоке.");
+    return notice("bad", "Этот оффер уже активен в потоке.", streamId);
   }
   const requested = action === "remove" ? active.filter((id) => id !== offerId) : [...active, offerId];
   return perform(async () => {
     drafts.set(streamId, await preview(streamId, confirmed.revision, requested));
     if (action === "add") searches.delete(streamId);
-  }, "Рассчитываем веса черновика…");
+  }, "Рассчитываем веса черновика…", streamId);
 });
