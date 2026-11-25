@@ -86,10 +86,13 @@
         </div>
         <button id="load" class="button primary" type="submit">Загрузить потоки</button>
       </form>
-      <div id="editor-notice" role="status" aria-live="polite"></div>
       <div id="editor-content">
         <p class="editor-empty">Загрузите кампанию по её ID, чтобы увидеть потоки.</p>
       </div>
+      <div id="editor-notice-fallback" class="editor-notice-slot">
+        <div id="editor-notice"></div>
+      </div>
+      <div id="editor-announcement" class="editor-announcement" role="status" aria-live="polite" aria-atomic="true"></div>
     </section>
   </section>
 </main>
