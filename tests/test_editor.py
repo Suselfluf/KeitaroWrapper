@@ -139,12 +139,57 @@ def test_search_and_draft_are_read_only(setup):
     assert not remote.writes
 
 
-def test_pin_then_publish_and_restore(setup):
+def test_refuses_fractional_pin_without_changing_current_weight(setup):
+    client, remote = setup
+    remote.stream["offers"] = rows((74, 25.5), (75, 75))
+    stream = sync(client)[1]
+
+    response = client.put(
+        STREAM + "/offers/74/pin", json={"revision": stream["revision"], "pinned": True}
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "error": {"code": "VALIDATION_ERROR", "message": "Закрепить можно только целый вес."}
+    }
+    assert memory() == [(74, False), (75, False)]
+    assert sync(client)[1] == stream
+    assert weights(stream) == [(74, 25.5), (75, 75)]
+    assert not remote.writes
+
+
+def test_unpins_offer_whose_weight_became_fractional(setup):
     client, remote = setup
     stream = sync(client)[1]
     response = client.put(
         STREAM + "/offers/74/pin", json={"revision": stream["revision"], "pinned": True}
     )
+    assert response.status_code == 200
+    remote.stream["offers"] = rows((74, 25.5), (75, 75))
+    fractional = sync(client)[1]
+    assert fractional["active"][0]["pinned"] is True
+
+    response = client.put(
+        STREAM + "/offers/74/pin", json={"revision": fractional["revision"], "pinned": False}
+    )
+
+    assert response.status_code == 200
+    unpinned = response.json()
+    assert unpinned["active"][0]["pinned"] is False
+    assert weights(unpinned) == [(74, 25.5), (75, 75)]
+    assert memory() == [(74, False), (75, False)]
+    assert not remote.writes
+
+
+@pytest.mark.parametrize("initial_share", [25, 25.0])
+def test_pin_then_publish_and_restore(setup, initial_share):
+    client, remote = setup
+    remote.stream["offers"] = rows((74, initial_share), (75, 75))
+    stream = sync(client)[1]
+    response = client.put(
+        STREAM + "/offers/74/pin", json={"revision": stream["revision"], "pinned": True}
+    )
+    assert response.status_code == 200
     pinned = response.json()
     assert weights(pinned) == weights(stream)
     assert pinned["active"][0]["pinned"]

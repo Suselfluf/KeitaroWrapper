@@ -339,6 +339,9 @@ class Editor:
             _check_revision(_revision(current, pins), change.revision)
             if offer_id not in current:
                 raise EditorError(404, "NOT_FOUND", "Оффер не активен в выбранном потоке.")
+            share = current[offer_id]
+            if change.pinned and share != int(share):
+                raise EditorError(422, "VALIDATION_ERROR", "Закрепить можно только целый вес.")
             row = memory.get(offer_id)
             if row is None:
                 row = StreamOfferMemory(stream_id=stream_id, offer_id=offer_id)
