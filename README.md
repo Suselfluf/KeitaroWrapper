@@ -2,7 +2,7 @@
 
 Локальное веб-приложение для тестового задания Adrobot. Оно создаёт кампании с двумя потоками и редактирует состав и веса офферов существующей кампании.
 
-[Исходное ТЗ и вложения](docs/assignment/README.md) · [TRACE.md — журнал реализации и проверок](TRACE.md) · [Архитектура](docs/ARCHITECTURE.md)
+[Исходное ТЗ и вложения](docs/assignment/README.md) · [TRACE.md — журнал реализации и проверок](TRACE.md) · [Архитектура](docs/ARCHITECTURE.md) · [Скринкаст (1:08)](docs/demo/keitaro-wrapper-screencast.mp4)
 
 ## Быстрый запуск
 
